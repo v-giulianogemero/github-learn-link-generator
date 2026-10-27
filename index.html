@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="Build GitHub Learn campaign links and QR codes. Organize your personal link library locally in your browser. Unofficial, free, and no account required.">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob:; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <title>GitHub Learn campaign links | Unofficial tool</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <a class="skip-link" href="#workspace">Skip to workspace</a>
+  <main class="shell" id="workspace" tabindex="-1">
+    <header>
+      <div class="brand"><span class="brand-icon" aria-hidden="true">&#8599;</span><div><div class="eyebrow" translate="no">FOR GITHUB LEARN</div><h1>Campaign links</h1></div></div>
+      <span class="badge">Personal browser library</span>
+    </header>
+    <p class="intro">Every initiative. Every placement. One organized link library.</p>
+    <div class="storage-notice"><strong>Your browser, your library.</strong> Data stays in this browser on this site, not in shared team storage. Clearing site data, private browsing, or browser storage eviction can remove it. Download JSON backups regularly. No sign-in or Copilot installation required.</div>
+    <div class="connection"><span class="status-dot" aria-hidden="true"></span><div><strong>Click tracking: Not connected</strong><p>Generated links open Learn directly. UTMs and a unique link ID label traffic; they do not count clicks.</p></div><button id="connection-info" class="text-button">How tracking works</button></div>
+    <noscript><p class="error">JavaScript is required to generate links and save your library locally. Enable it, then reload this page.</p></noscript>
+    <nav aria-label="Workspace views" class="tabs">
+      <button class="tab selected" data-view="builder" aria-current="page">Create link</button>
+      <button class="tab" data-view="history">Link library <span id="nav-count">0</span></button>
+      <button class="tab" data-view="initiatives">Initiatives</button>
+      <button class="tab" data-view="dashboard">Dashboard</button>
+    </nav>
+    <div id="error" class="error" role="alert" tabindex="-1" hidden></div>
+    <div id="notice" class="notice" role="status" hidden></div>
+    <section id="builder" class="view" aria-labelledby="builder-title">
+      <div class="section-heading"><div><h2 id="builder-title">Make your next link</h2><p>Choose an initiative, describe the placement, and you are ready to share.</p></div></div>
+      <div class="builder-grid">
+        <form id="link-form" class="card" autocomplete="off">
+          <fieldset id="link-fields" disabled>
+            <legend class="sr-only">Campaign link details</legend>
+            <div class="field"><label for="title">Link name <span>Required</span></label><input id="title" name="title" placeholder="e.g. Autumn newsletter featured path" maxlength="150" required></div>
+            <div class="field"><label for="destination">Learn destination <span>Required</span></label><input id="destination" name="destination" type="url" value="https://learn.github.com/" maxlength="2048" spellcheck="false" aria-describedby="destination-hint" required><small id="destination-hint">Only HTTPS links on learn.github.com. Existing UTM values will be replaced.</small></div>
+            <div class="field"><div class="label-row"><label for="initiativeId">Initiative <span>Required</span></label><button type="button" class="text-button" id="add-initiative">+ New initiative</button></div><select id="initiativeId" name="initiativeId" aria-describedby="campaign-hint" required><option value="">Choose an initiative</option></select><small id="campaign-hint">An initiative keeps related links under one utm_campaign.</small></div>
+            <div class="field"><p class="field-label">Start with a channel preset</p><div class="presets" role="group" aria-label="Channel presets">
+              <button type="button" data-preset="email" class="chip" aria-pressed="true">Email</button><button type="button" data-preset="qr" class="chip" aria-pressed="false">QR code</button><button type="button" data-preset="event" class="chip" aria-pressed="false">Event</button><button type="button" data-preset="social" class="chip" aria-pressed="false">Social</button><button type="button" data-preset="partner" class="chip" aria-pressed="false">Partner</button>
+            </div></div>
+            <div class="two-col">
+              <div class="field"><label for="source">Source <span>utm_source</span></label><input id="source" name="source" value="newsletter" placeholder="e.g. newsletter, event, linkedin" maxlength="100" spellcheck="false" required><small>Where the link is distributed.</small></div>
+              <div class="field"><label for="medium">Channel <span>utm_medium</span></label><input id="medium" name="medium" value="email" list="mediums" maxlength="100" spellcheck="false" required><datalist id="mediums"><option value="email"><option value="qr"><option value="event"><option value="social"><option value="referral"></datalist><small>How people discover it.</small></div>
+            </div>
+            <div class="field"><label for="content">Placement <span>utm_content &middot; optional</span></label><input id="content" name="content" placeholder="e.g. hero_button, booth_poster, follow_up" maxlength="100" spellcheck="false"><small>Use distinct placements for links in the same campaign.</small></div>
+            <details><summary>Additional details</summary>
+              <div class="field"><label for="term">Term <span>utm_term &middot; optional</span></label><input id="term" name="term" maxlength="100" spellcheck="false" placeholder="Optional keyword or segment"></div>
+              <div class="field"><label for="notes">Private note <span>Not included in the URL</span></label><textarea id="notes" name="notes" maxlength="500" rows="2" placeholder="Context for your future self"></textarea></div>
+            </details>
+            <p class="hint">Campaign values are lowercased; spaces become underscores. Never put personal information or secrets in URL parameters.</p>
+            <button type="submit" class="primary wide" id="save-link">Generate &amp; save link</button>
+          </fieldset>
+        </form>
+        <aside class="preview-column" aria-label="Link preview">
+          <div class="card preview-card">
+            <div class="eyebrow">YOUR LINK</div><h3 id="preview-title">Ready when you are</h3>
+            <p id="preview-message" role="status">Create an initiative and complete the required fields to preview your link.</p>
+            <code id="preview-url" class="url-box" tabindex="0">https://learn.github.com/</code>
+            <div id="saved-actions" hidden><div class="button-row"><button id="copy-result" class="primary">Copy link</button><button id="qr-result">Download QR</button></div><p class="success-text">Saved in this browser. Download a backup to keep a separate copy.</p></div>
+            <small id="preview-help">Draft only. The preview ID is replaced with a unique ID when you save.</small>
+          </div>
+          <div class="card subtle"><h3>A little consistency goes a long way</h3><p><strong>Example initiative:</strong> Autumn learning series</p><p><strong>Source:</strong> community</p><p><strong>Channel:</strong> qr</p><p><strong>Placement:</strong> meetup_poster</p><hr><p>Keep the initiative consistent across email, event, and QR placements. Each saved link gets its own ID.</p></div>
+        </aside>
+      </div>
+    </section>
+    <section id="history" class="view" aria-labelledby="history-title" hidden>
+      <div class="section-heading"><div><h2 id="history-title">Your link library</h2><p>Archive unused links without deleting their records. Keep backups of your browser library.</p></div><button id="history-new" class="primary">+ Create link</button></div>
+      <div class="toolbar">
+        <label class="search-label"><span class="sr-only">Search links</span><input id="search" name="search" type="search" autocomplete="off" placeholder="Search names, campaigns, URLs&hellip;"></label>
+        <label><span class="sr-only">Filter by initiative</span><select id="filter-initiative" name="filter-initiative"><option value="">All initiatives</option></select></label>
+        <label><span class="sr-only">Filter by channel</span><select id="filter-medium" name="filter-medium"><option value="">All channels</option></select></label>
+        <label class="check"><input id="include-archived" name="include-archived" type="checkbox"> Include archived</label>
+      </div>
+      <div class="section-heading compact"><span id="results-count" class="muted" role="status"></span><div class="button-row"><button id="export-csv" data-storage disabled>Export all CSV</button><button id="refresh-library">Refresh</button></div></div>
+      <div id="links-list" class="links-list"></div>
+      <button id="load-more" class="wide" hidden>Show more links</button>
+    </section>
+    <section id="initiatives" class="view" aria-labelledby="initiatives-title" hidden>
+      <div class="section-heading"><div><h2 id="initiatives-title">Give every initiative a home</h2><p>One campaign key, as many channels and placements as you need.</p></div><button id="initiative-new" class="primary" data-storage disabled>+ New initiative</button></div>
+      <div id="initiative-list" class="initiative-grid"></div>
+    </section>
+    <section id="dashboard" class="view" aria-labelledby="dashboard-title" hidden>
+      <div class="section-heading"><div><div class="eyebrow">LIBRARY OVERVIEW</div><h2 id="dashboard-title">Your campaign workspace, at a glance</h2><p>Inventory of all saved links, including archived links. Not a traffic report.</p></div></div>
+      <div id="stats" class="stats"></div>
+      <div class="two-col dashboard-charts">
+        <div class="card"><h3>Links by channel</h3><p class="muted">Number of links created, not clicks.</p><div id="channel-chart"></div></div>
+        <div class="card"><h3>Initiative coverage</h3><p class="muted">Saved links across your initiatives.</p><div id="initiative-chart"></div></div>
+      </div>
+      <div class="card tracking-card"><div><span class="badge">Integration required</span><h3>Traffic reporting needs a separate service</h3><p>No click, visitor, or conversion data is collected by this tool. No sample or estimated traffic is shown.</p></div><button id="dashboard-connect">View integration requirements</button></div>
+    </section>
+    <footer><div><strong>Saved only in this browser</strong><span id="save-status" role="status">Loading your library&hellip;</span></div><div class="button-row"><button class="text-button" id="download-backup" data-storage disabled>Download backup</button><button class="text-button" id="import-backup" data-storage disabled>Import backup</button><input id="backup-file" type="file" accept=".json,application/json" aria-label="JSON backup file" hidden></div></footer>
+    <p class="disclaimer">An unofficial community tool, not affiliated with or endorsed by GitHub. Your library is not synced between browsers or devices. <a href="https://github.com/v-giulianogemero/github-learn-link-generator" target="_blank" rel="noopener noreferrer">Source &amp; privacy details</a></p>
+  </main>
+  <dialog id="initiative-dialog" aria-labelledby="initiative-dialog-title">
+    <form id="initiative-form" autocomplete="off">
+      <div class="dialog-heading"><h2 id="initiative-dialog-title">New initiative</h2><button type="button" data-close="initiative-dialog" aria-label="Close">&#215;</button></div>
+      <p>Group email, QR codes, events, and other placements under a single campaign.</p>
+      <div class="field"><label for="initiative-name">Initiative name</label><input id="initiative-name" name="name" maxlength="100" placeholder="e.g. Autumn learning series" required></div>
+      <div class="field"><label for="initiative-campaign">Campaign key <span>utm_campaign</span></label><input id="initiative-campaign" name="campaign" maxlength="100" spellcheck="false" placeholder="e.g. autumn_learning" required><small>Use a unique, stable key. It becomes part of every link in this initiative.</small></div>
+      <div class="field"><label for="initiative-notes">Description <span>Optional</span></label><textarea id="initiative-notes" name="notes" maxlength="500" rows="2"></textarea></div>
+      <div id="initiative-error" role="alert" class="error" tabindex="-1" hidden></div>
+      <button type="submit" class="primary wide">Create initiative</button>
+    </form>
+  </dialog>
+  <dialog id="tracking-dialog" aria-labelledby="tracking-title">
+    <div class="dialog-heading"><h2 id="tracking-title">Connect real performance data</h2><button data-close="tracking-dialog" aria-label="Close">&#215;</button></div>
+    <p>This tool generates direct Learn URLs. It does not run a tracking endpoint, collect clicks, or connect to an analytics service.</p>
+    <h3>Report attributed visits</h3><p>A separately approved analytics integration would need to capture UTMs and <code>learn_link_id</code> at the destination, preserve attribution through sign-in, and provide authorized aggregate reporting. Attributed visits are not click counts.</p>
+    <h3>Count link opens</h3><p>A separately hosted, approved redirect service could record a request before sending the visitor to Learn. It would need its own privacy, access, retention, and bot-filtering controls. That service is not included here.</p>
+    <p class="hint">Existing direct links do not retroactively become tracked redirects. QR URL requests are not the same as camera recognition. Tracking remains Not connected in this tool.</p>
+  </dialog>
+  <dialog id="qr-dialog" aria-labelledby="qr-title">
+    <div class="dialog-heading"><h2 id="qr-title">Your QR code</h2><button data-close="qr-dialog" aria-label="Close">&#215;</button></div>
+    <p id="qr-label"></p><div id="qr-image"></div><p class="hint">Generated locally in your browser. No external QR service. Scan-test before printing, and keep the white border.</p>
+    <button id="download-qr" class="primary wide">Download SVG</button>
+  </dialog>
+  <dialog id="import-dialog" aria-labelledby="import-title">
+    <div class="dialog-heading"><h2 id="import-title">Import a local backup</h2><button data-close="import-dialog" aria-label="Close">&#215;</button></div>
+    <p id="import-summary"></p><p>This merges new records into this browser library. Existing links stay unchanged. Nothing is uploaded. Only import a backup you trust.</p>
+    <div id="import-error" role="alert" class="error" tabindex="-1" hidden></div>
+    <div class="button-row"><button id="confirm-import" class="primary">Merge backup</button><button data-close="import-dialog">Cancel</button></div>
+  </dialog>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "github-learn-link-generator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/core.test.mjs",
+    "test:browser": "playwright test",
+    "serve": "node tests/serve.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}
