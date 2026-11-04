@@ -3,21 +3,36 @@
 **[Open the tool](https://v-giulianogemero.github.io/github-learn-link-generator/)**
 
 An unofficial, browser-based UTM builder and personal campaign library for
-GitHub Learn. No account, Copilot installation, server, or production build is
+GitHub Learn and other HTTPS sites. No account, Copilot installation, server, or production build is
 required. This project is not affiliated with or endorsed by GitHub.
 
 ## Use
 
 1. Create an initiative with a unique campaign key.
-2. Enter an HTTPS `learn.github.com` destination, choose an email, QR, event,
-   social, or partner preset, and describe the placement.
+2. Enter any HTTPS destination (`https://learn.github.com/` remains the default),
+   choose an email, QR, event, social, or partner preset, and describe the placement.
 3. Generate and save, then copy the link or download its locally generated SVG QR
    code. Scan-test codes before distributing or printing, retaining the white border.
 
 Source, medium, campaign, content, and term are lowercased; spaces become
 underscores. Every saved link includes a unique `learn_link_id`. Existing standard
-UTM fields and `learn_link_id` are replaced; other query parameters and fragments
-are preserved. Generated URLs open Learn directly.
+UTM fields and `learn_link_id` before `#` are replaced; other query parameters and
+full hash routes, including their own query strings, are preserved. Generated
+URLs open the destination directly.
+
+All HTTPS hosts are supported, including
+`https://portal.github.partners/#/page/universe-2026`. Tracking parameters are
+added to the URL query **before `#`**, not inside the hash route. For example:
+
+```text
+https://portal.github.partners/?utm_source=example&utm_medium=email&utm_campaign=example&learn_link_id=example-id#/page/universe-2026
+```
+
+Non-HTTPS schemes, embedded credentials, and nondefault ports are rejected.
+Explicit HTTPS port 443 is accepted and normalized away. Supporting a host does
+not verify its safety or whether its analytics reads these parameters; check
+that you trust the destination before sharing. The tool does not visit or
+validate the destination's content or sign-in behavior.
 
 Search and filter saved links, group them by initiative, duplicate a record to
 create a new ID, or archive and restore records. Archiving does **not** revoke the
@@ -42,6 +57,8 @@ import on the new site.
   records are kept unchanged. Campaign keys are matched, conflicting IDs are
   rejected atomically, and repeat imports do not create duplicate links.
   Version 1 exports from the original local link manager are compatible.
+  Existing Learn links, IDs, and URLs stay unchanged; no migration is needed
+  for libraries containing both Learn and other HTTPS destinations.
   Only known library fields are retained.
 - **Export all CSV** includes every link, including archived records and notes.
   Spreadsheet formula prefixes are neutralized. Click counts stay blank.
@@ -68,7 +85,7 @@ license metadata are pinned in `dependencies.json`.
 GitHub Pages receives ordinary requests for the public site and its static
 assets, subject to GitHub's hosting policies. Copying a link uses your system
 clipboard; downloads create local files. Opening or sharing a generated link
-discloses its URL parameters to the recipient and to Learn. Never put personal
+discloses its URL parameters to the recipient and to the destination site. Never put personal
 information or secrets in URL parameters. Backups and CSV files include notes.
 The page's content security policy blocks application network connections.
 
@@ -80,7 +97,7 @@ integration would need to capture destination events and preserve attribution,
 including through sign-in. Attributed visits are not click counts.
 
 Alternatively, a separately hosted and approved redirect service could record
-link opens before forwarding to Learn. It would need privacy, access, retention,
+link opens before forwarding to the destination. It would need privacy, access, retention,
 and bot-filtering controls. No such service is included. Already distributed
 direct links cannot retroactively become tracked redirects, and QR requests
 are not the same as camera recognition.
@@ -103,7 +120,8 @@ The preview is at `http://127.0.0.1:48317/github-learn-link-generator/`, deliber
 using the production subpath. The test-only Node static server is not a backend
 and is not used on Pages. Browser tests use isolated profiles and synthetic
 fixtures to cover persistence, concurrent tabs, backup restore, rollback,
-invalid input, QR downloads, clipboard errors, storage failures, text safety,
+invalid input, HTTPS host support and portal hash routes, QR downloads,
+clipboard errors, storage failures, text safety,
 responsive layouts, and the absence of campaign-data network requests.
 
 To run the same browser checks against a deployment without modifying anyone's

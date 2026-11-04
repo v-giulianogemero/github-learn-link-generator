@@ -62,10 +62,13 @@ test("first link, presets, validation, QR, copy, inventory, CSV and reload stay 
     await expect(page.locator("#medium")).toHaveValue(medium);
   }
   await page.locator("#title").fill('<img src=x onerror=alert(1)>');
-  await page.locator("#destination").fill("https://example.com/");
-  await page.locator("#save-link").click();
-  await expect(page.locator("#error")).toContainText("Destination must be");
-  expect((await readLibrary(page)).links).toHaveLength(0);
+  for (const destination of ["http://example.com/", "https://user:password@portal.github.partners/", "https://portal.github.partners:8443/"]) {
+    await page.locator("#destination").fill(destination);
+    await page.locator("#save-link").click();
+    await expect(page.locator("#error")).toContainText("Destination must use HTTPS, without credentials or a nondefault port.");
+    await expect(page.locator("#save-link")).toBeEnabled();
+    expect((await readLibrary(page)).links).toHaveLength(0);
+  }
   await page.locator("#destination").fill("https://learn.github.com/?lang=en&utm_source=old#start");
   await page.locator("#content").fill("Hero Button");
   await save(page, '=HYPERLINK("example")');
@@ -125,6 +128,56 @@ test("first link, presets, validation, QR, copy, inventory, CSV and reload stay 
   expect((await readLibrary(page)).links).toHaveLength(2);
   expect(errors).toEqual([]);
 });
+
+for (const destination of [
+  "https://portal.github.partners/#/page/universe-2026",
+  "https://portal.github.partners/?lang=en&tag=one&tag=two&utm_source=old&learn_link_id=old#/page/universe-2026?tab=overview&next=%2Fwelcome%3Fx%3D1&utm_source=route",
+]) {
+  test(`portal preview, save, reload, QR, export and restore: ${destination}`, async ({ page, browser, baseURL }) => {
+    await start(page);
+    await expect(page.locator("#destination")).toHaveValue("https://learn.github.com/");
+    const requests = [];
+    page.on("request", (request) => {
+      if (!request.url().startsWith("blob:")) requests.push(request.url());
+    });
+    await initiative(page, "Portal regression");
+    await page.locator("#title").fill("Portal test link");
+    await page.locator("#destination").fill(destination);
+    const hash = new URL(destination).hash;
+    const prefix = destination.includes("?lang=") ? "lang=en&tag=one&tag=two&" : "";
+    const expectedUrl = (id) => `https://portal.github.partners/?${prefix}utm_source=newsletter&utm_medium=email&utm_campaign=portal_regression&learn_link_id=${id}${hash}`;
+    await expect(page.locator("#preview-url")).toHaveText(expectedUrl("preview"));
+    await save(page, "Portal test link");
+    const saved = (await readLibrary(page)).links[0];
+    expect(saved.url).toBe(expectedUrl(saved.id));
+    await expect(page.locator("#preview-url")).toHaveText(saved.url);
+    await page.locator("#qr-result").click();
+    await expect.poll(() => page.locator("#qr-image img").evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
+    expect((await download(page, "#download-qr")).content).toContain("<svg");
+    await page.locator('#qr-dialog [data-close]').click();
+    const backup = await download(page, "#download-backup");
+    expect(JSON.parse(backup.content).links).toEqual([saved]);
+    await page.locator('[data-view="history"]').click();
+    const csv = await download(page, "#export-csv");
+    expect(csv.content).toContain(`"${saved.url}"`);
+    expect(csv.content).toContain('"false","","not_connected"');
+    expect(requests).toEqual([]);
+    await page.reload();
+    await expect(page.locator("#links-list .url-box")).toHaveText(saved.url);
+    expect((await readLibrary(page)).links).toEqual([saved]);
+    const context = await browser.newContext({ baseURL });
+    try {
+      const restored = await context.newPage();
+      await start(restored);
+      await chooseBackup(restored, backup.content);
+      await restored.locator("#confirm-import").click();
+      await expect(restored.locator("#notice")).toContainText("Imported 1");
+      expect((await readLibrary(restored)).links).toEqual([saved]);
+      await restored.reload();
+      expect((await readLibrary(restored)).links).toEqual([saved]);
+    } finally { await context.close(); }
+  });
+}
 
 test("two open tabs refresh and concurrent transactions never lose records", async ({ page, context }) => {
   await start(page);
@@ -273,7 +326,7 @@ test("responsive light/dark layouts, labels, focus and dialog keyboard controls"
     for (const width of [375, 768, 1280]) {
       await page.setViewportSize({ width, height: 900 });
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-      await expect(page.locator("#destination")).toHaveAccessibleName("Learn destination Required");
+      await expect(page.locator("#destination")).toHaveAccessibleName("Destination URL Required");
       await page.locator("#connection-info").click();
       await expect(page.locator("#tracking-dialog")).toBeVisible();
       await page.keyboard.press("Escape");

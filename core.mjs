@@ -28,10 +28,10 @@ export function cleanDestination(value) {
   try {
     url = new URL(text(value, "Destination URL", 2048));
   } catch {
-    throw new Error("Enter a valid https://learn.github.com URL.");
+    throw new Error("Enter a valid HTTPS destination URL.");
   }
-  if (url.protocol !== "https:" || url.hostname !== "learn.github.com" || url.username || url.password || url.port) {
-    throw new Error("Destination must be on https://learn.github.com, without credentials or a custom port.");
+  if (url.protocol !== "https:" || url.username || url.password || url.port) {
+    throw new Error("Destination must use HTTPS, without credentials or a nondefault port.");
   }
   for (const key of utmKeys) url.searchParams.delete(key);
   return url;

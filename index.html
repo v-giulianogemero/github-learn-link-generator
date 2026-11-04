@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
-  <meta name="description" content="Build GitHub Learn campaign links and QR codes. Organize your personal link library locally in your browser. Unofficial, free, and no account required.">
+  <meta name="description" content="Build campaign links and QR codes for GitHub Learn or any HTTPS destination. Organize your personal link library locally in your browser. Unofficial, free, and no account required.">
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob:; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
   <title>GitHub Learn campaign links | Unofficial tool</title>
@@ -18,12 +18,12 @@
   <a class="skip-link" href="#workspace">Skip to workspace</a>
   <main class="shell" id="workspace" tabindex="-1">
     <header>
-      <div class="brand"><span class="brand-icon" aria-hidden="true">&#8599;</span><div><div class="eyebrow" translate="no">FOR GITHUB LEARN</div><h1>Campaign links</h1></div></div>
+      <div class="brand"><span class="brand-icon" aria-hidden="true">&#8599;</span><div><div class="eyebrow" translate="no">FOR GITHUB LEARN &amp; MORE</div><h1>Campaign links</h1></div></div>
       <span class="badge">Personal browser library</span>
     </header>
     <p class="intro">Every initiative. Every placement. One organized link library.</p>
     <div class="storage-notice"><strong>Your browser, your library.</strong> Data stays in this browser on this site, not in shared team storage. Clearing site data, private browsing, or browser storage eviction can remove it. Download JSON backups regularly. No sign-in or Copilot installation required.</div>
-    <div class="connection"><span class="status-dot" aria-hidden="true"></span><div><strong>Click tracking: Not connected</strong><p>Generated links open Learn directly. UTMs and a unique link ID label traffic; they do not count clicks.</p></div><button id="connection-info" class="text-button">How tracking works</button></div>
+    <div class="connection"><span class="status-dot" aria-hidden="true"></span><div><strong>Click tracking: Not connected</strong><p>Generated links open your destination directly. UTMs and a unique link ID label traffic; they do not count clicks.</p></div><button id="connection-info" class="text-button">How tracking works</button></div>
     <noscript><p class="error">JavaScript is required to generate links and save your library locally. Enable it, then reload this page.</p></noscript>
     <nav aria-label="Workspace views" class="tabs">
       <button class="tab selected" data-view="builder" aria-current="page">Create link</button>
@@ -40,7 +40,7 @@
           <fieldset id="link-fields" disabled>
             <legend class="sr-only">Campaign link details</legend>
             <div class="field"><label for="title">Link name <span>Required</span></label><input id="title" name="title" placeholder="e.g. Autumn newsletter featured path" maxlength="150" required></div>
-            <div class="field"><label for="destination">Learn destination <span>Required</span></label><input id="destination" name="destination" type="url" value="https://learn.github.com/" maxlength="2048" spellcheck="false" aria-describedby="destination-hint" required><small id="destination-hint">Only HTTPS links on learn.github.com. Existing UTM values will be replaced.</small></div>
+            <div class="field"><label for="destination">Destination URL <span>Required</span></label><input id="destination" name="destination" type="url" value="https://learn.github.com/" maxlength="2048" spellcheck="false" aria-describedby="destination-hint" required><small id="destination-hint">Any HTTPS destination, without credentials or nondefault ports. Existing UTM values before # are replaced; hash routes stay intact. Check that you trust the destination before sharing.</small></div>
             <div class="field"><div class="label-row"><label for="initiativeId">Initiative <span>Required</span></label><button type="button" class="text-button" id="add-initiative">+ New initiative</button></div><select id="initiativeId" name="initiativeId" aria-describedby="campaign-hint" required><option value="">Choose an initiative</option></select><small id="campaign-hint">An initiative keeps related links under one utm_campaign.</small></div>
             <div class="field"><p class="field-label">Start with a channel preset</p><div class="presets" role="group" aria-label="Channel presets">
               <button type="button" data-preset="email" class="chip" aria-pressed="true">Email</button><button type="button" data-preset="qr" class="chip" aria-pressed="false">QR code</button><button type="button" data-preset="event" class="chip" aria-pressed="false">Event</button><button type="button" data-preset="social" class="chip" aria-pressed="false">Social</button><button type="button" data-preset="partner" class="chip" aria-pressed="false">Partner</button>
@@ -111,9 +111,9 @@
   </dialog>
   <dialog id="tracking-dialog" aria-labelledby="tracking-title">
     <div class="dialog-heading"><h2 id="tracking-title">Connect real performance data</h2><button data-close="tracking-dialog" aria-label="Close">&#215;</button></div>
-    <p>This tool generates direct Learn URLs. It does not run a tracking endpoint, collect clicks, or connect to an analytics service.</p>
+    <p>This tool generates direct destination URLs. It does not run a tracking endpoint, collect clicks, or connect to an analytics service.</p>
     <h3>Report attributed visits</h3><p>A separately approved analytics integration would need to capture UTMs and <code>learn_link_id</code> at the destination, preserve attribution through sign-in, and provide authorized aggregate reporting. Attributed visits are not click counts.</p>
-    <h3>Count link opens</h3><p>A separately hosted, approved redirect service could record a request before sending the visitor to Learn. It would need its own privacy, access, retention, and bot-filtering controls. That service is not included here.</p>
+    <h3>Count link opens</h3><p>A separately hosted, approved redirect service could record a request before sending the visitor to the destination. It would need its own privacy, access, retention, and bot-filtering controls. That service is not included here.</p>
     <p class="hint">Existing direct links do not retroactively become tracked redirects. QR URL requests are not the same as camera recognition. Tracking remains Not connected in this tool.</p>
   </dialog>
   <dialog id="qr-dialog" aria-labelledby="qr-title">

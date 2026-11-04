@@ -32,15 +32,89 @@ test("UTMs normalize, replace existing labels and preserve query/fragment", () =
   assert.equal(new URL(link.destination).searchParams.has("utm_source"), false);
 });
 
-test("only HTTPS Learn destinations without credentials or custom ports", () => {
+test("HTTPS destinations on any host are accepted, including the default port", () => {
+  for (const destination of [
+    "https://learn.github.com/a?topic=C%2B%2B#b",
+    "https://portal.github.partners/#/page/universe-2026",
+    "https://github.com/features?locale=en#overview",
+    "https://example.com/",
+    "https://events.example.org/path?tag=one&tag=two#details",
+    "https://learn.github.com.example.org/",
+    "https://example.com./",
+  ]) assert.equal(cleanDestination(destination).href, destination);
+  assert.equal(cleanDestination("https://learn.github.com:443/").href, "https://learn.github.com/");
+  assert.equal(cleanDestination("https://example.com:443/").href, "https://example.com/");
+});
+
+test("non-HTTPS schemes, credentials, nondefault ports and invalid input remain rejected", () => {
   for (const input of [
-    "https://evil.test/", "https://learn.github.com.evil.test/", "https://learn.github.com@evil.test",
+    "https://learn.github.com@example.com/",
     "https://user@learn.github.com/", "http://learn.github.com", "javascript:alert(1)",
-    "https://learn.github.com:8080/", "not a url", "https://learn.github.com/\n", "https://learn.github.com./",
+    "http://portal.github.partners/#/page/universe-2026", "ftp://example.com/", "data:text/html,test",
+    "file:///example", "//example.com/", "mailto:test@example.com", "https://",
+    "https://user:password@portal.github.partners/", "https://:password@example.com/",
+    "https://learn.github.com:8080/", "https://portal.github.partners:8443/", "https://example.com:80/",
+    "not a url", "https://learn.github.com/\n",
     null, [], {},
   ]) assert.throws(() => cleanDestination(input));
-  assert.equal(cleanDestination("https://learn.github.com/a?topic=C%2B%2B#b").href, "https://learn.github.com/a?topic=C%2B%2B#b");
-  assert.equal(cleanDestination("https://learn.github.com:443/").href, "https://learn.github.com/");
+});
+
+test("Partners portal keeps its full hash route and places tracking before the hash", () => {
+  const { state, input } = fixture();
+  for (const query of ["", "?lang=en&tag=one&tag=two&topic=C%2B%2B&utm_source=old&utm_source=older&utm_id=old&learn_link_id=old"]) {
+    for (const hash of ["#/page/universe-2026", "#/page/universe-2026?tab=overview&next=%2Fwelcome%3Fx%3D1&utm_source=route"]) {
+      const link = buildLink({ ...input, destination: `https://portal.github.partners/${query}${hash}` }, state, "portal-test");
+      const expectedQuery = query ? "lang=en&tag=one&tag=two&topic=C%2B%2B&" : "";
+      assert.equal(link.url, `https://portal.github.partners/?${expectedQuery}utm_source=community&utm_medium=qr&utm_campaign=example_learning&utm_content=booth_poster&learn_link_id=portal-test${hash}`);
+      const url = new URL(link.url);
+      assert.equal(url.hash, hash);
+      assert.equal(url.searchParams.get("learn_link_id"), "portal-test");
+      assert.equal(url.searchParams.getAll("utm_source").length, 1);
+      assert.equal(url.searchParams.has("utm_id"), false);
+      const qr = qrcode(0, "M");
+      qr.addData(link.url, "Byte");
+      qr.make();
+      assert.match(qr.createSvgTag(), /<svg/);
+    }
+  }
+});
+
+test("old Learn backups and mixed-host backups round-trip without rewriting URLs or IDs", () => {
+  const legacy = {
+    version: 1, updatedAt: "2026-10-27T00:00:00.000Z",
+    initiatives: [{ id: "legacy-initiative", name: "Example", campaign: "example", notes: "", createdAt: "2026-10-27T00:00:00.000Z" }],
+    links: [{
+      id: "legacy-link", title: "Example Learn link", destination: "https://learn.github.com/?lang=en#learn",
+      initiativeId: "legacy-initiative", source: "newsletter", medium: "email", campaign: "example",
+      content: "", term: "", notes: "", createdAt: "2026-10-27T00:00:00.000Z", archived: false,
+      url: "https://learn.github.com/?lang=en&utm_source=newsletter&utm_medium=email&utm_campaign=example&learn_link_id=legacy-link#learn",
+    }],
+  };
+  assert.deepEqual(parseBackup(toBackup(legacy)), legacy);
+  const state = structuredClone(legacy);
+  for (const destination of ["https://portal.github.partners/#/page/universe-2026", "https://example.org/?lang=en#/route?tab=details"]) {
+    createLink(state, { ...legacy.links[0], destination });
+  }
+  assert.deepEqual(parseBackup(toBackup(state)), state);
+  assert.deepEqual(state.links.at(-1), legacy.links[0]);
+  const restored = emptyState();
+  assert.equal(mergeBackup(restored, validateState(state)).added, 3);
+  assert.equal(mergeBackup(restored, validateState(state)).added, 0);
+  for (const link of state.links) {
+    assert.deepEqual(restored.links.find((item) => item.id === link.id), link);
+    assert.ok(toCsv(state).includes(`"${link.url}"`));
+  }
+});
+
+test("imports still reject unsafe destinations even when saved URLs match their parameters", () => {
+  const { state, input } = fixture();
+  const link = createLink(state, { ...input, destination: "https://portal.github.partners/#/page/universe-2026" });
+  for (const origin of ["http://portal.github.partners", "https://user:password@portal.github.partners", "https://portal.github.partners:8443"]) {
+    const unsafe = structuredClone(state);
+    unsafe.links[0].destination = link.destination.replace("https://portal.github.partners", origin);
+    unsafe.links[0].url = link.url.replace("https://portal.github.partners", origin);
+    assert.throws(() => parseBackup(JSON.stringify(unsafe)), /Destination must/);
+  }
 });
 
 test("parameter constraints, missing initiatives and duplicate campaign keys", () => {
