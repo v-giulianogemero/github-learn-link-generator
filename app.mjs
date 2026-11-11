@@ -11,6 +11,7 @@ const presets = {
   event: ["event", "event"],
   social: ["linkedin", "social"],
   partner: ["partner", "referral"],
+  learning_path: ["learning_path", "learning_path"],
 };
 let library = emptyState();
 let libraryReady = false;

@@ -10,9 +10,13 @@ required. This project is not affiliated with or endorsed by GitHub.
 
 1. Create an initiative with a unique campaign key.
 2. Enter any HTTPS destination (`https://learn.github.com/` remains the default),
-   choose an email, QR, event, social, or partner preset, and describe the placement.
+   choose an email, QR, event, social, partner, or learning path preset, and describe the placement.
 3. Generate and save, then copy the link or download its locally generated SVG QR
    code. Scan-test codes before distributing or printing, retaining the white border.
+
+The **Learning path** preset sets `utm_medium=learning_path` and defaults the
+source to `learning_path`. As with every preset, you can edit the source before
+saving. The channel is also available as a suggestion in the Channel field.
 
 Source, medium, campaign, content, and term are lowercased; spaces become
 underscores. Every saved link includes a unique `learn_link_id`. Existing standard

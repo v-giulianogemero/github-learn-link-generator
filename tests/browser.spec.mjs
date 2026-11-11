@@ -56,7 +56,7 @@ test("first link, presets, validation, QR, copy, inventory, CSV and reload stay 
     if (!request.url().startsWith("blob:")) requests.push({ url: request.url(), method: request.method() });
   });
   await initiative(page);
-  for (const [preset, source, medium] of [["email", "newsletter", "email"], ["qr", "event", "qr"], ["event", "event", "event"], ["social", "linkedin", "social"], ["partner", "partner", "referral"]]) {
+  for (const [preset, source, medium] of [["email", "newsletter", "email"], ["qr", "event", "qr"], ["event", "event", "event"], ["social", "linkedin", "social"], ["learning_path", "learning_path", "learning_path"], ["partner", "partner", "referral"]]) {
     await page.locator(`[data-preset="${preset}"]`).click();
     await expect(page.locator("#source")).toHaveValue(source);
     await expect(page.locator("#medium")).toHaveValue(medium);
@@ -127,6 +127,60 @@ test("first link, presets, validation, QR, copy, inventory, CSV and reload stay 
   await expect(page.locator("#dashboard")).toBeVisible();
   expect((await readLibrary(page)).links).toHaveLength(2);
   expect(errors).toEqual([]);
+});
+
+test("Learning path preset stays consistent through preview, save, filtering, inventory and backups", async ({ page, browser, baseURL }) => {
+  await start(page);
+  await initiative(page);
+  await save(page, "Existing email link");
+  const existing = (await readLibrary(page)).links[0];
+  const preset = page.getByRole("button", { name: "Learning path", exact: true });
+  await expect(preset).toBeVisible();
+  await expect(page.locator('#mediums option[value="learning_path"]')).toHaveCount(1);
+  await preset.click();
+  await expect(preset).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator('[data-preset="email"]')).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator("#source")).toHaveValue("learning_path");
+  await expect(page.locator("#medium")).toHaveValue("learning_path");
+  await expect(page.locator("#preview-url")).toContainText("utm_source=learning_path&utm_medium=learning_path");
+  await expect(page.locator("#preview-url")).toContainText("learn_link_id=preview");
+  await page.locator("#source").fill("Example Path");
+  await expect(page.locator("#preview-url")).toContainText("utm_source=example_path&utm_medium=learning_path");
+  await save(page, "Learning path link");
+  const saved = (await readLibrary(page)).links[0];
+  expect(saved.medium).toBe("learning_path");
+  expect(saved.source).toBe("example_path");
+  expect(new URL(saved.url).searchParams.get("utm_medium")).toBe("learning_path");
+  await expect(page.locator("#preview-url")).toHaveText(saved.url);
+  const backup = await download(page, "#download-backup");
+  expect(JSON.parse(backup.content).links).toEqual([saved, existing]);
+  await page.locator('[data-view="history"]').click();
+  await page.locator("#filter-medium").selectOption("learning_path");
+  await expect(page.locator(".link-card")).toHaveCount(1);
+  await expect(page.locator(".link-card h3")).toHaveText("Learning path link");
+  await expect(page.locator(".link-card .url-box")).toHaveText(saved.url);
+  const csv = await download(page, "#export-csv");
+  expect(csv.content).toContain('"example_path","learning_path"');
+  expect(csv.content).toContain(`"${saved.url}"`);
+  expect(csv.content).toContain(`"${existing.url}"`);
+  await page.locator("#filter-medium").selectOption("email");
+  await expect(page.locator(".link-card h3")).toHaveText("Existing email link");
+  await page.locator('[data-view="dashboard"]').click();
+  await expect(page.getByRole("progressbar", { name: "learning_path: 1 saved links", exact: true })).toHaveAttribute("value", "1");
+  await expect(page.getByRole("progressbar", { name: "email: 1 saved links", exact: true })).toHaveAttribute("value", "1");
+  await expect(page.locator("#stats")).toContainText("Not connected");
+  await page.reload();
+  await expect(page.locator("#nav-count")).toHaveText("2");
+  expect((await readLibrary(page)).links).toEqual([saved, existing]);
+  const context = await browser.newContext({ baseURL });
+  try {
+    const restored = await context.newPage();
+    await start(restored);
+    await chooseBackup(restored, backup.content);
+    await restored.locator("#confirm-import").click();
+    await expect(restored.locator("#notice")).toContainText("Imported 2");
+    expect((await readLibrary(restored)).links).toEqual([saved, existing]);
+  } finally { await context.close(); }
 });
 
 for (const destination of [
