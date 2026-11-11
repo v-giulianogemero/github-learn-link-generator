@@ -49,6 +49,10 @@ test("first link, presets, validation, QR, copy, inventory, CSV and reload stay 
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await start(page);
+  await expect(page.locator(".connection, #connection-info")).toHaveCount(0);
+  await expect(page.getByText("Click tracking: Not connected", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".storage-notice")).toBeVisible();
+  await expect(page.locator(".storage-notice")).toContainText("Your browser, your library.");
   expect((await readLibrary(page)).links).toEqual([]);
   expect((await readLibrary(page)).initiatives).toEqual([]);
   const requests = [];
@@ -98,6 +102,7 @@ test("first link, presets, validation, QR, copy, inventory, CSV and reload stay 
   const backup = await download(page, "#download-backup");
   expect(JSON.parse(backup.content).links[0]).toEqual(original);
   await page.locator('[data-view="history"]').click();
+  await expect(page.locator(".link-card").getByText("Clicks: Not connected", { exact: true })).toBeVisible();
   const csv = await download(page, "#export-csv");
   expect(csv.content).toContain(`"'=HYPERLINK(""example"")"`);
   expect(csv.content).toContain('"false","","not_connected"');
@@ -379,13 +384,17 @@ test("responsive light/dark layouts, labels, focus and dialog keyboard controls"
     await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
     for (const width of [375, 768, 1280]) {
       await page.setViewportSize({ width, height: 900 });
+      await page.locator('[data-view="builder"]').click();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await expect(page.locator("#destination")).toHaveAccessibleName("Destination URL Required");
-      await page.locator("#connection-info").click();
+      await page.locator('[data-view="dashboard"]').click();
+      await expect(page.locator("#stats")).toContainText("Not connected");
+      await page.locator("#dashboard-connect").click();
       await expect(page.locator("#tracking-dialog")).toBeVisible();
+      await expect(page.locator("#tracking-dialog")).toContainText("It does not run a tracking endpoint, collect clicks, or connect to an analytics service.");
       await page.keyboard.press("Escape");
       await expect(page.locator("#tracking-dialog")).not.toBeVisible();
-      await expect(page.locator("#connection-info")).toBeFocused();
+      await expect(page.locator("#dashboard-connect")).toBeFocused();
     }
   }
 });

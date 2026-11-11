@@ -359,7 +359,7 @@ document.querySelectorAll("[data-preset]").forEach((node) => node.addEventListen
   schedulePreview();
 }));
 for (const id of ["add-initiative", "initiative-new"]) $(id).addEventListener("click", () => openInitiative($(id)));
-for (const id of ["connection-info", "dashboard-connect"]) $(id).addEventListener("click", () => openDialog("tracking-dialog", $(id)));
+$("dashboard-connect").addEventListener("click", () => openDialog("tracking-dialog", $("dashboard-connect")));
 for (const id of ["search", "filter-initiative", "filter-medium", "include-archived"]) $(id).addEventListener("input", () => {
   visibleLimit = 50;
   renderHistory();

@@ -51,10 +51,6 @@ header, .section-heading, .dialog-heading, .label-row, footer { justify-content:
 .badge { border: 1px solid var(--border); color: var(--muted); border-radius: 20px; padding: 3px 9px; font-size: 11px; white-space: nowrap; }
 .intro { color: var(--muted); margin: 16px 0; }
 .storage-notice { border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; font-size: 12px; margin-bottom: 12px; }
-.connection { display: flex; gap: 12px; padding: 14px 16px; border: 1px solid var(--border); border-left: 3px solid #bf8700; border-radius: 8px; background: var(--soft); font-size: 12px; }
-.connection p { margin: 3px 0 0; color: var(--muted); }
-.connection .text-button { margin-left: auto; flex-shrink: 0; align-self: start; }
-.status-dot { background: #bf8700; width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; margin-top: 5px; }
 .tabs { display: flex; gap: 24px; border-bottom: 1px solid var(--border); margin: 22px 0 24px; overflow: auto; padding: 4px; }
 .tab { border: 0; background: none; padding: 12px 0; border-radius: 0; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; }
 .tab.selected { border-bottom-color: #fd8c73; color: var(--fg); }
@@ -149,9 +145,6 @@ dialog h3 { margin-top: 22px; }
   .builder-grid { grid-template-columns: 1fr; }
   .subtle { display: none; }
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .connection { flex-wrap: wrap; }
-  .connection .text-button { margin-left: 20px; }
-  .connection > div { flex: 1; min-width: 180px; }
   .tracking-card { display: block; }
   .tracking-card button { margin-top: 15px; }
 }
