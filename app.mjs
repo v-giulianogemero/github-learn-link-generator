@@ -103,7 +103,7 @@ async function changed() {
 }
 
 function showView(name, updateHash = true) {
-  currentView = ["builder", "history", "initiatives", "dashboard"].includes(name) ? name : "builder";
+  currentView = ["how-to-use", "builder", "history", "initiatives", "dashboard"].includes(name) ? name : "builder";
   document.querySelectorAll(".view").forEach((view) => { view.hidden = view.id !== currentView; });
   document.querySelectorAll(".tab").forEach((tab) => {
     const active = tab.dataset.view === currentView;
@@ -353,6 +353,7 @@ function renderDashboard() {
 
 document.querySelectorAll(".tab").forEach((tab) => tab.addEventListener("click", () => showView(tab.dataset.view)));
 window.addEventListener("popstate", () => showView(location.hash.slice(1), false));
+window.addEventListener("hashchange", () => showView(location.hash.slice(1), false));
 document.querySelectorAll("[data-close]").forEach((node) => node.addEventListener("click", () => $(node.dataset.close).close()));
 document.querySelectorAll("[data-preset]").forEach((node) => node.addEventListener("click", () => {
   [$("source").value, $("medium").value] = presets[node.dataset.preset];

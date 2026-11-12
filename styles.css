@@ -59,6 +59,16 @@ header, .section-heading, .dialog-heading, .label-row, footer { justify-content:
 .section-heading { margin-bottom: 20px; }
 .section-heading p, .muted, .hint, small { color: var(--muted); }
 .section-heading p { font-size: 12px; margin-bottom: 0; }
+.guide { max-width: 900px; overflow-wrap: anywhere; }
+.guide .card { margin-top: 20px; }
+.guide-steps { padding-left: 24px; margin: 12px 0; }
+.guide-steps li { padding-left: 6px; margin-bottom: 16px; }
+.guide-steps li::marker { color: var(--accent); font-weight: 700; }
+.guide-channels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; margin: 16px 0; }
+.guide dt { font-weight: 600; }
+.guide dd { margin: 4px 0 0; }
+.guide-example-fields { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 20px; margin: 16px 0; }
+.guide-example-fields dd { margin: 0; }
 .builder-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 22px; align-items: start; }
 .card { padding: 22px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); min-width: 0; }
 .subtle { background: var(--soft); font-size: 12px; margin-top: 16px; }
@@ -154,6 +164,9 @@ dialog h3 { margin-top: 22px; }
   .tabs { gap: 19px; }
   .tab { font-size: 12px; }
   .two-col { grid-template-columns: 1fr; gap: 0; }
+  .guide-channels, .guide-example-fields { grid-template-columns: 1fr; }
+  .guide-example-fields { gap: 4px; }
+  .guide-example-fields dd { margin-bottom: 8px; }
   .dashboard-charts { gap: 14px; }
   .section-heading { align-items: start; flex-wrap: wrap; }
   .card { padding: 17px; }

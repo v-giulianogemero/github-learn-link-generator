@@ -25,6 +25,7 @@
     <div class="storage-notice"><strong>Your browser, your library.</strong> Data stays in this browser on this site, not in shared team storage. Clearing site data, private browsing, or browser storage eviction can remove it. Download JSON backups regularly. No sign-in or Copilot installation required.</div>
     <noscript><p class="error">JavaScript is required to generate links and save your library locally. Enable it, then reload this page.</p></noscript>
     <nav aria-label="Workspace views" class="tabs">
+      <button class="tab" data-view="how-to-use">How to use</button>
       <button class="tab selected" data-view="builder" aria-current="page">Create link</button>
       <button class="tab" data-view="history">Link library <span id="nav-count">0</span></button>
       <button class="tab" data-view="initiatives">Initiatives</button>
@@ -32,6 +33,62 @@
     </nav>
     <div id="error" class="error" role="alert" tabindex="-1" hidden></div>
     <div id="notice" class="notice" role="status" hidden></div>
+    <section id="how-to-use" class="view guide" aria-labelledby="guide-title" hidden>
+      <div class="section-heading"><div><h2 id="guide-title">How to use</h2><p>Create a labeled link, share it, and keep an organized record. No account or Copilot installation needed.</p></div></div>
+      <p>Share the <a href="#how-to-use">direct guide link</a> with teammates, or copy this page address while this tab is open. It shares these instructions, not your personal library.</p>
+      <p>Each browser profile keeps its own library on this site. There is <strong>no automatic team, Excel, or SharePoint sync</strong>. Agree on campaign naming with teammates before creating links.</p>
+      <div class="card">
+        <h3>Create and share a link</h3>
+        <ol class="guide-steps">
+          <li><strong>Choose or create an initiative.</strong> In <strong>Create link</strong>, choose an existing <strong>Initiative</strong> or select <strong>+ New initiative</strong>. Enter an <strong>Initiative name</strong> and a unique <strong>Campaign key</strong>, then select <strong>Create initiative</strong>. The key becomes <code>utm_campaign</code>: keep it stable across all placements for that initiative. The <strong>Initiatives</strong> tab also lets you create groups and view their links.</li>
+          <li><strong>Name the link and choose its destination.</strong> Enter a descriptive <strong>Link name</strong> so you can find it later. Paste a trusted HTTPS address into <strong>Destination URL</strong>; any HTTPS host is supported, without credentials or nondefault ports. Learn is the default. Existing UTM values before <code>#</code> are replaced; unrelated query parameters and full hash routes stay intact.</li>
+          <li><strong>Choose a channel preset.</strong> Use the channel guide below to match where you will share the link. A preset fills <strong>Source</strong> (the sender or site) and <strong>Channel</strong> (the distribution method). Both stay editable. These URL labels are called UTMs; they describe a link, rather than count its clicks.</li>
+          <li><strong>Describe the placement.</strong> Optionally enter <strong>Placement</strong>, such as <code>hero_button</code> or <code>booth_poster</code>, to distinguish links in the same campaign. Under <strong>Additional details</strong>, use <strong>Term</strong> for an optional keyword or segment. A <strong>Private note</strong> is not in the URL, but it is included in CSV and JSON exports.</li>
+          <li><strong>Generate, save, and share.</strong> Review the preview, then select <strong>Generate &amp; save link</strong>. The draft is not saved until you do this; each saved link gets a unique <code>learn_link_id</code>. Select <strong>Copy link</strong>, or <strong>Download QR</strong> followed by <strong>Download SVG</strong>. QR codes are generated locally. Scan-test the code before sharing or printing, and keep its white border. If clipboard access is blocked, select and copy the displayed URL.</li>
+          <li><strong>Find and reuse your links.</strong> In <strong>Link library</strong>, search or filter by initiative and channel. Use <strong>Copy link</strong> or <strong>QR code</strong> to share again. <strong>Duplicate</strong> opens a new draft; saving it creates a new ID without changing the original. <strong>Archive</strong> hides a record from the default list, but <strong>does not disable a published URL</strong>. Check <strong>Include archived</strong> and select <strong>Restore</strong> to bring it back.</li>
+        </ol>
+        <p class="hint">Use consistent, short labels. Campaign, Source, Channel, Placement, and Term values are lowercased; spaces become underscores (for example, <code>Learning Path</code> becomes <code>learning_path</code>). Use letters a-z, numbers, underscores, dots, or hyphens, starting with a letter or number. Never put personal information or secrets in URLs.</p>
+      </div>
+      <div class="card">
+        <h3>Choose a channel</h3>
+        <p>Pick the distribution method, not just the type of destination page. You can point an Email link at a learning path, or use Learning path for a link placed inside one.</p>
+        <dl class="guide-channels">
+          <div><dt>Email</dt><dd>Newsletters or email messages. Defaults: Source <code>newsletter</code>, Channel <code>email</code>.</dd></div>
+          <div><dt>QR code</dt><dd>Scannable posters or handouts. Defaults: Source <code>event</code>, Channel <code>qr</code>.</dd></div>
+          <div><dt>Event</dt><dd>Event communications or materials. Defaults: Source <code>event</code>, Channel <code>event</code>.</dd></div>
+          <div><dt>Social</dt><dd>Social posts. Defaults: Source <code>linkedin</code>, Channel <code>social</code>. Change Source for another platform.</dd></div>
+          <div><dt>Partner</dt><dd>Partner referrals. Defaults: Source <code>partner</code>, Channel <code>referral</code>. Change Source to a useful partner label.</dd></div>
+          <div><dt>Learning path</dt><dd>Links shared within a learning path. Defaults: Source <code>learning_path</code>, Channel <code>learning_path</code>. Change Source to describe the path if useful.</dd></div>
+        </dl>
+        <p class="hint">Any saved link can have a QR code. Downloading a QR code does not change its Channel.</p>
+      </div>
+      <div class="card" id="guide-example">
+        <h3>Worked example: one campaign, two placements</h3>
+        <p>Illustration only. Reading this guide does not create any initiatives or links.</p>
+        <dl class="guide-example-fields">
+          <dt>Initiative name</dt><dd>Autumn learning series</dd>
+          <dt>Campaign key</dt><dd><code>autumn_learning</code></dd>
+          <dt>Link name</dt><dd>Newsletter hero</dd>
+          <dt>Destination URL</dt><dd><code>https://learn.github.com/</code></dd>
+          <dt>Preset</dt><dd>Email</dd>
+          <dt>Source / Channel</dt><dd><code>newsletter</code> / <code>email</code></dd>
+          <dt>Placement</dt><dd><code>hero_button</code></dd>
+        </dl>
+        <p>The resulting URL has these labels. <code>example-id</code> below is illustrative; saving assigns a real unique ID.</p>
+        <code class="url-box" id="guide-example-url" translate="no">https://learn.github.com/?utm_source=newsletter&amp;utm_medium=email&amp;utm_campaign=autumn_learning&amp;utm_content=hero_button&amp;learn_link_id=example-id</code>
+        <p>For a second link in the newsletter footer, select <strong>Duplicate</strong> in <strong>Link library</strong>. Change <strong>Link name</strong> to <strong>Newsletter footer</strong> and <strong>Placement</strong> to <code>footer_link</code>, keeping the same initiative, Source, and Channel. Select <strong>Generate &amp; save link</strong>. Both URLs use <code>utm_campaign=autumn_learning</code>, with different placements and unique IDs.</p>
+      </div>
+      <div class="card">
+        <h3>Keep a backup, not just a spreadsheet</h3>
+        <p><strong>Export all CSV</strong> in <strong>Link library</strong> downloads all links, including archived links and notes, for reporting or opening in a spreadsheet. Click counts are blank. CSV is not a restorable library backup.</p>
+        <p>Use <strong>Download backup</strong> at the bottom of the page for a restorable JSON file. To preserve your library or move it to another browser, keep that file somewhere appropriate for its contents. In the other browser, open this site, select <strong>Import backup</strong>, choose the JSON file, review it, and select <strong>Merge backup</strong>. New records are added; existing records stay unchanged. Conflicting IDs are rejected without changing your library.</p>
+        <p>Back up regularly: clearing site data, private browsing, storage eviction, or losing a browser profile can remove your library. Sharing a backup shares its records and private notes; it does not set up ongoing synchronization.</p>
+      </div>
+      <div class="card">
+        <h3>Read the dashboard as inventory</h3>
+        <p><strong>Dashboard</strong> counts saved links, initiatives, and channels, including archived records. It does <strong>not</strong> report clicks, visitors, or conversions. Link clicks remain <strong>Not connected</strong>. Select <strong>View integration requirements</strong> there to learn about a separate approved analytics or redirect service.</p>
+      </div>
+    </section>
     <section id="builder" class="view" aria-labelledby="builder-title">
       <div class="section-heading"><div><h2 id="builder-title">Make your next link</h2><p>Choose an initiative, describe the placement, and you are ready to share.</p></div></div>
       <div class="builder-grid">

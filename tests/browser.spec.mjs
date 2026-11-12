@@ -45,6 +45,133 @@ async function chooseBackup(page, data) {
   });
 }
 
+test("How to use navigation supports default, direct links, refresh and history without seeding data", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await start(page);
+  const nav = page.getByRole("navigation", { name: "Workspace views" });
+  const guideTab = nav.getByRole("button", { name: "How to use", exact: true });
+  const guide = page.getByRole("region", { name: "How to use", exact: true });
+  await expect(nav.locator(".tab")).toHaveText(["How to use", "Create link", "Link library 0", "Initiatives", "Dashboard"]);
+  await expect(page.locator("#builder")).toBeVisible();
+  await expect(guide).not.toBeVisible();
+  await expect(nav.locator('[aria-current="page"]')).toHaveText("Create link");
+  const empty = await readLibrary(page);
+  await guideTab.focus();
+  await page.keyboard.press("Enter");
+  await expect(guide).toBeVisible();
+  await expect(nav.locator('[aria-current="page"]')).toHaveText("How to use");
+  await expect(page).toHaveURL(/#how-to-use$/);
+  await expect(guide.getByRole("link", { name: "direct guide link" })).toHaveAttribute("href", "#how-to-use");
+  await page.reload();
+  await expect(guide).toBeVisible();
+  await expect(nav.locator('[aria-current="page"]')).toHaveText("How to use");
+  await page.goBack();
+  await expect(page.locator("#builder")).toBeVisible();
+  await expect(nav.locator('[aria-current="page"]')).toHaveText("Create link");
+  await page.goForward();
+  await expect(guide).toBeVisible();
+  await expect(nav.locator('[aria-current="page"]')).toHaveText("How to use");
+  await nav.getByRole("button", { name: "Initiatives", exact: true }).click();
+  await expect(page.locator("#initiatives")).toBeVisible();
+  await page.goto("./#how-to-use");
+  await expect(guide).toBeVisible();
+  await expect(page.locator(".view:visible")).toHaveCount(1);
+  await guide.getByRole("link", { name: "direct guide link" }).click();
+  expect(await readLibrary(page)).toEqual(empty);
+  await expect(guide).toContainText("no automatic team, Excel, or SharePoint sync");
+  await expect(page.locator(".connection, #connection-info")).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test("guide worked example matches generated URLs and tab changes preserve drafts and records", async ({ page }) => {
+  await start(page);
+  await page.locator('[data-view="how-to-use"]').click();
+  const fields = page.locator("#guide-example .guide-example-fields dd");
+  const values = await fields.allTextContents();
+  expect(values).toEqual([
+    "Autumn learning series", "autumn_learning", "Newsletter hero", "https://learn.github.com/",
+    "Email", "newsletter / email", "hero_button",
+  ]);
+  const example = await page.locator("#guide-example-url").textContent();
+  expect((await readLibrary(page)).links).toEqual([]);
+  expect((await readLibrary(page)).initiatives).toEqual([]);
+  const channelGuide = await page.locator(".guide-channels > div").evaluateAll((rows) =>
+    rows.map((row) => ({
+      name: row.querySelector("dt").textContent,
+      defaults: [...row.querySelectorAll("code")].map((node) => node.textContent),
+    })));
+  await page.locator('[data-view="builder"]').click();
+  await page.locator("#add-initiative").click();
+  await page.locator("#initiative-name").fill(values[0]);
+  await page.locator("#initiative-campaign").fill(values[1]);
+  await page.getByRole("button", { name: "Create initiative", exact: true }).click();
+  await expect(page.locator("#initiative-dialog")).not.toBeVisible();
+  for (const { name, defaults } of channelGuide) {
+    await page.getByRole("group", { name: "Channel presets", exact: true }).getByRole("button", { name, exact: true }).click();
+    await expect(page.locator("#source")).toHaveValue(defaults[0]);
+    await expect(page.locator("#medium")).toHaveValue(defaults[1]);
+  }
+  await page.getByRole("group", { name: "Channel presets", exact: true }).getByRole("button", { name: values[4], exact: true }).click();
+  await page.locator("#title").fill(values[2]);
+  await page.locator("#destination").fill(values[3]);
+  await page.locator("#content").fill(values[6]);
+  await expect(page.locator("#preview-url")).toHaveText(example.replace("example-id", "preview"));
+  await page.locator('[data-view="how-to-use"]').click();
+  await page.locator('[data-view="builder"]').click();
+  await expect(page.locator("#title")).toHaveValue(values[2]);
+  await expect(page.locator("#content")).toHaveValue(values[6]);
+  await save(page, values[2]);
+  const hero = (await readLibrary(page)).links[0];
+  expect(hero.url).toBe(example.replace("example-id", hero.id));
+  await page.locator('[data-view="history"]').click();
+  await page.getByRole("button", { name: "Duplicate", exact: true }).click();
+  await page.locator("#content").fill("footer_link");
+  await save(page, "Newsletter footer");
+  const saved = await readLibrary(page);
+  const footer = saved.links[0];
+  expect(footer.campaign).toBe(hero.campaign);
+  expect(footer.initiativeId).toBe(hero.initiativeId);
+  expect(footer.id).not.toBe(hero.id);
+  expect(footer.url).toBe(example.replace("hero_button", "footer_link").replace("example-id", footer.id));
+  await page.locator('[data-view="how-to-use"]').click();
+  await page.reload();
+  await expect(page.locator("#how-to-use")).toBeVisible();
+  expect(await readLibrary(page)).toEqual(saved);
+  await page.locator('[data-view="history"]').click();
+  await expect(page.locator(".link-card")).toHaveCount(2);
+});
+
+test("guide stays readable and keyboard accessible on mobile and desktop in light and dark mode", async ({ page }) => {
+  await page.goto("./#how-to-use");
+  const guide = page.getByRole("region", { name: "How to use", exact: true });
+  await expect(guide).toBeVisible();
+  await expect(guide.getByRole("heading", { name: "How to use", level: 2, exact: true })).toBeVisible();
+  await expect(guide.locator("ol > li")).toHaveCount(6);
+  await expect(guide.locator(".guide-channels dt")).toHaveText(["Email", "QR code", "Event", "Social", "Partner", "Learning path"]);
+  await expect(guide).toContainText("does not disable a published URL");
+  await expect(guide).toContainText("CSV is not a restorable library backup.");
+  for (const colorScheme of ["light", "dark"]) {
+    await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
+    for (const width of [320, 375, 768, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      expect(await guide.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+      for (const name of ["Create and share a link", "Choose a channel", "Worked example: one campaign, two placements", "Keep a backup, not just a spreadsheet", "Read the dashboard as inventory"]) {
+        const heading = guide.getByRole("heading", { name, level: 3, exact: true });
+        await heading.scrollIntoViewIfNeeded();
+        await expect(heading).toBeVisible();
+      }
+      const link = guide.getByRole("link", { name: "direct guide link" });
+      await link.focus();
+      await expect(link).toBeFocused();
+      expect(await link.evaluate((node) => getComputedStyle(node).outlineStyle)).not.toBe("none");
+      await page.keyboard.press("Enter");
+      await expect(guide).toBeVisible();
+    }
+  }
+});
+
 test("first link, presets, validation, QR, copy, inventory, CSV and reload stay local", async ({ page }) => {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));

@@ -8,6 +8,14 @@ required. This project is not affiliated with or endorsed by GitHub.
 
 ## Use
 
+Share the **[How to use guide](https://v-giulianogemero.github.io/github-learn-link-generator/#how-to-use)**
+with teammates for numbered instructions, channel guidance (including Learning
+path), a worked example, QR sharing, library management, backups, and dashboard
+explanations. The example is illustrative; it does not create stored records.
+The navigation is **How to use | Create link | Link library | Initiatives |
+Dashboard**. The main site still opens **Create link** by default; the direct
+guide URL opens **How to use**, including after a refresh.
+
 1. Create an initiative with a unique campaign key.
 2. Enter any HTTPS destination (`https://learn.github.com/` remains the default),
    choose an email, QR, event, social, partner, or learning path preset, and describe the placement.
@@ -49,6 +57,10 @@ The database is named `learn-campaign-links`. Data is scoped to this browser and
 origin, not shared with a team or synchronized between devices. Other sites on
 the same GitHub Pages origin have the browser's same-origin storage privileges;
 do not treat this as encrypted storage or store secrets.
+
+There is no automatic team, Excel, or SharePoint synchronization. Sharing the
+guide URL shares instructions, not your library. CSV is for reporting; use JSON
+backup/import to preserve or transfer records between browsers.
 
 Clearing site data, private browsing, browser storage eviction, or losing access
 to your browser profile can remove the library. **Download JSON backups
@@ -126,7 +138,8 @@ and is not used on Pages. Browser tests use isolated profiles and synthetic
 fixtures to cover persistence, concurrent tabs, backup restore, rollback,
 invalid input, HTTPS host support and portal hash routes, QR downloads,
 clipboard errors, storage failures, text safety,
-responsive layouts, and the absence of campaign-data network requests.
+responsive layouts, guide navigation and example accuracy, and the absence of
+campaign-data network requests.
 
 To run the same browser checks against a deployment without modifying anyone's
 existing browser library:
