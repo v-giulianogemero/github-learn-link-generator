@@ -1,5 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+import jsQR from "jsqr";
+
+const qrTest = test.extend({ deviceScaleFactor: 2 });
 
 async function readLibrary(page) {
   return page.evaluate(async () => {
@@ -44,6 +47,183 @@ async function chooseBackup(page, data) {
     buffer: Buffer.from(typeof data === "string" ? data : JSON.stringify(data)),
   });
 }
+
+async function decodeQr(page, { svg, selector, size }) {
+  const pixels = await page.evaluate(async ({ svg, selector, size }) => {
+    const img = selector ? document.querySelector(selector) : new Image();
+    const url = svg ? URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" })) : null;
+    try {
+      if (url) img.src = url;
+      await img.decode();
+      const width = size || Math.round(img.getBoundingClientRect().width * devicePixelRatio);
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = width;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0, width, width);
+      const rgba = ctx.getImageData(0, 0, width, width).data;
+      let binary = "";
+      for (let offset = 0; offset < rgba.length; offset += 32768) {
+        binary += String.fromCharCode(...rgba.subarray(offset, offset + 32768));
+      }
+      return { data: btoa(binary), width };
+    } finally { if (url) URL.revokeObjectURL(url); }
+  }, { svg, selector, size });
+  const rgba = new Uint8ClampedArray(Buffer.from(pixels.data, "base64"));
+  expect([...rgba.slice(0, 4)]).toEqual([255, 255, 255, 255]);
+  return jsQR(rgba, pixels.width, pixels.width, { inversionAttempts: "dontInvert" })?.data;
+}
+
+qrTest("automatic branded QR matches the persisted URL for all presets and a custom channel", async ({ page }) => {
+  test.setTimeout(120000);
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await start(page);
+  const requests = [];
+  page.on("request", (request) => { if (!request.url().startsWith("blob:")) requests.push(request.url()); });
+  await initiative(page, "QR examples");
+  await page.locator("#destination").fill("https://portal.github.partners/?lang=en&tag=one&tag=two&utm_medium=old#/page/universe-2026?tab=overview&next=%2Fwelcome%3Fx%3D1");
+  await page.locator("#content").fill("Hero Button");
+  await page.locator("summary").click();
+  await page.locator("#term").fill("Example Segment");
+  const cases = [
+    ["email", "newsletter", "email"], ["qr", "event", "qr"], ["event", "event", "event"],
+    ["social", "linkedin", "social"], ["partner", "partner", "referral"],
+    ["learning_path", "learning_path", "learning_path"], [null, "example_custom", "community"],
+  ];
+  const svgs = new Map();
+  for (const [preset, source, medium] of cases) {
+    if (preset) await page.locator(`[data-preset="${preset}"]`).click();
+    else {
+      await page.locator("#source").fill(source);
+      await page.locator("#medium").fill(medium);
+    }
+    await expect(page.locator("#saved-qr-image img")).toHaveCount(0);
+    await expect(page.locator("#saved-qr")).not.toBeVisible();
+    await save(page, `Example ${medium}`);
+    const state = await readLibrary(page);
+    const link = state.links[0];
+    expect([link.source, link.medium, link.content, link.term]).toEqual([source, medium, "hero_button", "example_segment"]);
+    expect(link.url).not.toContain("learn_link_id=preview");
+    const url = new URL(link.url);
+    expect(url.searchParams.get("learn_link_id")).toBe(link.id);
+    expect(url.searchParams.get("utm_campaign")).toBe("qr_examples");
+    expect(url.searchParams.getAll("tag")).toEqual(["one", "two"]);
+    expect(url.hash).toBe("#/page/universe-2026?tab=overview&next=%2Fwelcome%3Fx%3D1");
+    await expect(page.locator("#preview-url")).toHaveText(link.url);
+    await expect(page.locator("#saved-qr-image img")).toBeVisible();
+    expect(await decodeQr(page, { selector: "#saved-qr-image img" })).toBe(link.url);
+    const { content, filename } = await download(page, "#qr-result");
+    expect(filename).toContain(`-${medium}-${link.id.slice(0, 8)}.svg`);
+    expect(content).toContain("MIT License");
+    expect(content).toContain('fill="#1a7f37"');
+    expect(content).toContain('fill="#14532d"');
+    expect(content).toContain('fill="#24292f"');
+    expect(await decodeQr(page, { svg: content, size: 512 })).toBe(link.url);
+    svgs.set(link.id, content);
+    expect(await readLibrary(page)).toEqual(state);
+  }
+  const saved = await readLibrary(page);
+  expect(saved.links).toHaveLength(7);
+  expect(JSON.parse((await download(page, "#download-backup")).content)).toEqual(saved);
+  await page.locator('[data-view="history"]').click();
+  const csv = (await download(page, "#export-csv")).content;
+  for (const link of saved.links) expect(csv).toContain(`"${link.url}"`);
+  expect(requests).toEqual([]);
+  await page.reload();
+  await expect(page.locator(".link-card")).toHaveCount(7);
+  for (const link of saved.links) {
+    const card = page.locator(".link-card").filter({ has: page.getByRole("heading", { name: link.title, exact: true }) });
+    await card.getByRole("button", { name: "QR code", exact: true }).click();
+    expect(await decodeQr(page, { selector: "#qr-image img" })).toBe(link.url);
+    expect((await download(page, "#download-qr")).content).toBe(svgs.get(link.id));
+    await page.keyboard.press("Escape");
+  }
+  expect(await readLibrary(page)).toEqual(saved);
+  expect(errors).toEqual([]);
+});
+
+qrTest("branded QR decoding preserves long supported URLs and correction capacity boundaries", async ({ page }) => {
+  test.setTimeout(180000);
+  await start(page);
+  await initiative(page);
+  await page.locator("summary").click();
+  await page.locator("#content").fill("a".repeat(100));
+  await page.locator("#term").fill("b".repeat(100));
+  for (const [length, correction] of [[1273, "H"], [1274, "Q"], [1663, "Q"], [1664, "M"], [2200, "M"]]) {
+    const destination = await page.evaluate(async (length) => {
+      const { buildLink } = await import("./core.mjs");
+      const { Store } = await import("./storage.mjs");
+      const state = await new Store().read();
+      const input = {
+        ...Object.fromEntries(new FormData(document.getElementById("link-form"))),
+        title: "Long example", destination: "https://example.com/?q=#/page?view=full",
+      };
+      const fixed = buildLink(input, state, "00000000-0000-4000-8000-000000000000").url.length;
+      const padding = "abcdefghijklmnopqrstuvwxyz0123456789".repeat(70).slice(0, length - fixed);
+      return `https://example.com/?q=${padding}#/page?view=full`;
+    }, length);
+    await page.locator("#destination").fill(destination);
+    await save(page, `Long example ${length}`);
+    const link = (await readLibrary(page)).links[0];
+    expect(link.url.length).toBe(length);
+    await expect(page.locator("#saved-qr-help")).toContainText("Use the SVG at a larger size");
+    const qr = await page.evaluate(async (url) => (await import("./qr.mjs")).createQr(url), link.url);
+    expect(qr.correction).toBe(correction);
+    const { content } = await download(page, "#qr-result");
+    expect(content).toBe(qr.svg);
+    for (const scale of [4, 6]) {
+      expect(await decodeQr(page, { svg: content, size: (qr.modules + 8) * scale })).toBe(link.url);
+    }
+  }
+  expect((await readLibrary(page)).links).toHaveLength(5);
+});
+
+qrTest("branded QR stays readable on mobile and in both themes; failures preserve the saved URL", async ({ page }) => {
+  test.setTimeout(90000);
+  await start(page);
+  await initiative(page);
+  await save(page, "Example green QR");
+  const original = (await readLibrary(page)).links[0];
+  for (const colorScheme of ["light", "dark"]) {
+    await page.emulateMedia({ colorScheme });
+    for (const width of [320, 375, 768, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      const img = page.locator("#saved-qr-image img");
+      await img.scrollIntoViewIfNeeded();
+      await expect(img).toBeVisible();
+      await expect(img).toHaveAccessibleName("QR code for Example green QR");
+      await expect(page.locator("#saved-qr-image")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+      expect(await decodeQr(page, { selector: "#saved-qr-image img" })).toBe(original.url);
+    }
+  }
+  const requests = [];
+  page.on("request", (request) => { if (!request.url().startsWith("blob:")) requests.push(request.url()); });
+  await page.locator("#title").fill("Image error example");
+  await page.evaluate(() => {
+    window.originalDecode = HTMLImageElement.prototype.decode;
+    HTMLImageElement.prototype.decode = async () => { throw new Error("Synthetic image failure"); };
+  });
+  await page.locator("#save-link").click();
+  await expect(page.locator("#error")).toContainText("Your link is saved.");
+  await expect(page.locator("#error")).toContainText("Open QR code in Link library to retry");
+  await expect(page.locator("#saved-qr")).not.toBeVisible();
+  await expect(page.locator("#qr-result")).toBeDisabled();
+  await expect(page.locator("#save-link")).toBeDisabled();
+  const after = await readLibrary(page);
+  expect(after.links).toHaveLength(2);
+  expect(after.links[1]).toEqual(original);
+  await expect(page.locator("#preview-url")).toHaveText(after.links[0].url);
+  await expect(page.locator("#copy-result")).toBeEnabled();
+  await page.evaluate(() => { HTMLImageElement.prototype.decode = window.originalDecode; });
+  await page.locator('[data-view="history"]').click();
+  await page.locator(".link-card").first().getByRole("button", { name: "QR code", exact: true }).click();
+  expect(await decodeQr(page, { selector: "#qr-image img" })).toBe(after.links[0].url);
+  expect((await download(page, "#download-qr")).content).toContain("<svg");
+  await page.keyboard.press("Escape");
+  expect(await readLibrary(page)).toEqual(after);
+  expect(requests).toEqual([]);
+});
 
 test("How to use navigation supports default, direct links, refresh and history without seeding data", async ({ page }) => {
   const errors = [];
@@ -218,14 +398,12 @@ test("first link, presets, validation, QR, copy, inventory, CSV and reload stay 
   });
   await page.locator("#copy-result").click();
   await expect(page.locator("#error")).toContainText("Select and copy the URL");
-  await page.locator("#qr-result").click();
-  await expect(page.locator("#qr-image img")).toBeVisible();
-  await expect.poll(() => page.locator("#qr-image img").evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
-  const svg = await download(page, "#download-qr");
+  await expect(page.locator("#saved-qr-image img")).toBeVisible();
+  await expect.poll(() => page.locator("#saved-qr-image img").evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
+  const svg = await download(page, "#qr-result");
   expect(svg.filename).toMatch(/\.svg$/);
   expect(svg.content).toContain("<svg");
   expect(svg.content).toContain("viewBox=");
-  await page.locator('#qr-dialog [data-close]').click();
   const backup = await download(page, "#download-backup");
   expect(JSON.parse(backup.content).links[0]).toEqual(original);
   await page.locator('[data-view="history"]').click();
@@ -337,10 +515,8 @@ for (const destination of [
     const saved = (await readLibrary(page)).links[0];
     expect(saved.url).toBe(expectedUrl(saved.id));
     await expect(page.locator("#preview-url")).toHaveText(saved.url);
-    await page.locator("#qr-result").click();
-    await expect.poll(() => page.locator("#qr-image img").evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
-    expect((await download(page, "#download-qr")).content).toContain("<svg");
-    await page.locator('#qr-dialog [data-close]').click();
+    await expect.poll(() => page.locator("#saved-qr-image img").evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
+    expect((await download(page, "#qr-result")).content).toContain("<svg");
     const backup = await download(page, "#download-backup");
     expect(JSON.parse(backup.content).links).toEqual([saved]);
     await page.locator('[data-view="history"]').click();

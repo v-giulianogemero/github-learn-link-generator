@@ -1,6 +1,6 @@
 import { buildLink, emptyState, MAX_BACKUP_BYTES, parseBackup, toBackup, toCsv } from "./core.mjs";
 import { Store, DATABASE_NAME } from "./storage.mjs";
-import { qrcode } from "./vendor/qrcode.mjs";
+import { createQr } from "./qr.mjs";
 
 const $ = (id) => document.getElementById(id);
 const store = new Store();
@@ -18,8 +18,8 @@ let libraryReady = false;
 let saving = false;
 let savedLink = null;
 let pendingBackup = null;
-let qrDownload = null;
-let qrObjectUrl = null;
+let savedQr = null;
+let dialogQr = null;
 let previewTimer;
 let refreshVersion = 0;
 let campaignEdited = false;
@@ -135,6 +135,11 @@ function updateCampaignHint() {
 
 function schedulePreview() {
   savedLink = null;
+  releaseQr(savedQr);
+  savedQr = null;
+  $("saved-qr-image").replaceChildren();
+  $("saved-qr").hidden = true;
+  $("qr-result").disabled = true;
   $("save-link").disabled = saving;
   $("save-link").textContent = "Generate & save link";
   $("saved-actions").hidden = true;
@@ -170,21 +175,37 @@ function openDialog(id, trigger = document.activeElement) {
   dialog.showModal();
 }
 
-function showQr(link, trigger) {
-  const qr = qrcode(0, "M");
-  qr.addData(link.url, "Byte");
-  qr.make();
-  const svg = qr.createSvgTag({ cellSize: 5, margin: 20, scalable: true });
-  if (qrObjectUrl) URL.revokeObjectURL(qrObjectUrl);
-  qrObjectUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+function releaseQr(qr) {
+  if (qr) URL.revokeObjectURL(qr.objectUrl);
+}
+
+async function qrImage(link) {
+  const result = createQr(link.url);
+  const objectUrl = URL.createObjectURL(new Blob([result.svg], { type: "image/svg+xml" }));
   const img = element("img");
-  img.src = qrObjectUrl;
+  img.src = objectUrl;
   img.alt = `QR code for ${link.title}`;
   img.width = 340;
   img.height = 340;
-  $("qr-image").replaceChildren(img);
+  try { await img.decode(); }
+  catch {
+    URL.revokeObjectURL(objectUrl);
+    throw new Error("The QR image could not be displayed. Open QR code in Link library to retry.");
+  }
+  return { ...result, objectUrl, img, filename: `${link.campaign}-${link.medium}-${link.id.slice(0, 8)}.svg` };
+}
+
+function qrHelp(qr) {
+  return `${qr.modules > 77 ? "This long link makes a dense code. Use the SVG at a larger size. " : ""}Generated locally for this exact saved URL. Scan-test before sharing or printing, and keep the white border.`;
+}
+
+async function showQr(link, trigger) {
+  const result = await qrImage(link);
+  releaseQr(dialogQr);
+  dialogQr = result;
+  $("qr-image").replaceChildren(result.img);
   $("qr-label").textContent = link.title;
-  qrDownload = { svg, filename: `${link.campaign}-${link.medium}-${link.id.slice(0, 8)}.svg` };
+  $("qr-help").textContent = qrHelp(result);
   openDialog("qr-dialog", trigger);
 }
 
@@ -370,14 +391,15 @@ $("history-new").addEventListener("click", () => showView("builder"));
 $("refresh-library").addEventListener("click", () => run(refresh));
 $("link-form").addEventListener("input", schedulePreview);
 $("copy-result").addEventListener("click", () => { if (savedLink) run(() => copy(savedLink)); });
-$("qr-result").addEventListener("click", () => { if (savedLink) run(() => showQr(savedLink, $("qr-result"))); });
+$("qr-result").addEventListener("click", () => run(() => {
+  if (savedQr) downloadBlob(savedQr.svg, "image/svg+xml", savedQr.filename);
+}));
 $("download-qr").addEventListener("click", () => run(() => {
-  if (qrDownload) downloadBlob(qrDownload.svg, "image/svg+xml", qrDownload.filename);
+  if (dialogQr) downloadBlob(dialogQr.svg, "image/svg+xml", dialogQr.filename);
 }));
 $("qr-dialog").addEventListener("close", () => {
-  if (qrObjectUrl) URL.revokeObjectURL(qrObjectUrl);
-  qrObjectUrl = null;
-  qrDownload = null;
+  releaseQr(dialogQr);
+  dialogQr = null;
   $("qr-image").replaceChildren();
 });
 
@@ -399,7 +421,18 @@ $("link-form").addEventListener("submit", (event) => {
       $("saved-actions").hidden = false;
       $("preview-help").hidden = true;
       await changed();
-      message(`Saved "${link.title}" in this browser. Click counting is not connected.`);
+      try {
+        savedQr = await qrImage(link);
+        $("saved-qr-image").replaceChildren(savedQr.img);
+        $("saved-qr-help").textContent = qrHelp(savedQr);
+        $("saved-qr").hidden = false;
+        $("qr-result").disabled = false;
+      } catch (error) {
+        $("preview-message").textContent = "Your link is saved, but its QR code is unavailable.";
+        throw new Error(`Your link is saved. ${error.message}`);
+      }
+      $("preview-message").textContent = "Your link and matching QR code are ready to share.";
+      message(`Saved "${link.title}" and generated its QR code in this browser. Click counting is not connected.`);
       $("copy-result").focus();
     } finally {
       saving = false;

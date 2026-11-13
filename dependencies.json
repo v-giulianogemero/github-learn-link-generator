@@ -6,5 +6,13 @@
     "license": "MIT",
     "licenseSource": "https://raw.githubusercontent.com/kazuhikoarase/qrcode-generator/master/LICENSE",
     "vendoredFiles": ["vendor/qrcode.mjs", "vendor/LICENSE"]
+  },
+  "octicons-mark-github": {
+    "commit": "ea8e6bb79894cc7e85564ee9b53d86b418738d04",
+    "source": "https://raw.githubusercontent.com/primer/octicons/ea8e6bb79894cc7e85564ee9b53d86b418738d04/icons/mark-github-16.svg",
+    "license": "MIT",
+    "licenseSource": "https://raw.githubusercontent.com/primer/octicons/ea8e6bb79894cc7e85564ee9b53d86b418738d04/LICENSE",
+    "vendoredFiles": ["vendor/github-mark.mjs"],
+    "notes": "Unchanged official 16x16 path. Full license included in the module and in every generated SVG. GitHub trademarks remain GitHub's; this tool is unofficial."
   }
 }

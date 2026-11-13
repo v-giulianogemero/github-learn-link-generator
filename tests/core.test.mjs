@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { buildLink, cleanDestination, createInitiative, createLink, emptyState, MAX_BACKUP_BYTES, mergeBackup, parseBackup, setArchived, toBackup, toCsv, validateState } from "../core.mjs";
-import { qrcode } from "../vendor/qrcode.mjs";
+import { createQr } from "../qr.mjs";
 
 function fixture() {
   const state = emptyState();
@@ -71,10 +71,7 @@ test("Partners portal keeps its full hash route and places tracking before the h
       assert.equal(url.searchParams.get("learn_link_id"), "portal-test");
       assert.equal(url.searchParams.getAll("utm_source").length, 1);
       assert.equal(url.searchParams.has("utm_id"), false);
-      const qr = qrcode(0, "M");
-      qr.addData(link.url, "Byte");
-      qr.make();
-      assert.match(qr.createSvgTag(), /<svg/);
+      assert.match(createQr(link.url).svg, /<svg/);
     }
   }
 });
@@ -212,12 +209,21 @@ test("QR supports normal and exactly maximum-length accepted URLs", () => {
   }, state, "test-id");
   assert.equal(long.url.length, 2200);
   for (const link of [normal, long]) {
-    const qr = qrcode(0, "M");
-    qr.addData(link.url, "Byte");
-    qr.make();
-    assert.ok(qr.getModuleCount() > 20);
-    assert.match(qr.createSvgTag({ cellSize: 5, margin: 20, scalable: true }), /<svg[^>]+viewBox=/);
+    const qr = createQr(link.url);
+    assert.ok(qr.modules > 20);
+    assert.match(qr.svg, /<svg[^>]+viewBox=/);
+    assert.match(qr.svg, /Copyright \(c\) 2026 GitHub Inc\./);
+    assert.match(qr.svg, /fill="#1a7f37"/);
+    assert.match(qr.svg, /fill="#14532d"/);
+    assert.match(qr.svg, /fill="#24292f"/);
+    assert.doesNotMatch(qr.svg, /<script|<image|href=/);
+    assert.ok(qr.svg.includes(`viewBox="0 0 ${qr.modules + 8} ${qr.modules + 8}"`));
   }
+  for (const [length, correction] of [[1273, "H"], [1274, "Q"], [1663, "Q"], [1664, "M"], [2200, "M"]]) {
+    assert.equal(createQr("https://example.com/".padEnd(length, "a")).correction, correction);
+  }
+  assert.throws(() => createQr("a".repeat(2201)), /2,200/);
+  assert.throws(() => createQr("https://example.com/\u00e9"), /encoded URL/);
   assert.throws(() => buildLink({ ...input, destination: "https://learn.github.com/?q=" + "a".repeat(2000), term: "a".repeat(100), content: "a".repeat(100) }, state), /too long/);
 });
 
@@ -226,7 +232,7 @@ test("production code has relative assets and no local app or backend dependenci
   assert.match(html, /connect-src 'none'/);
   assert.match(html, /src="\.\/app.mjs"/);
   assert.match(html, /href="\.\/styles.css"/);
-  for (const file of ["app.mjs", "core.mjs", "storage.mjs", "index.html", "styles.css", "README.md"]) {
+  for (const file of ["app.mjs", "core.mjs", "storage.mjs", "qr.mjs", "vendor/github-mark.mjs", "index.html", "styles.css", "README.md"]) {
     const source = await readFile(new URL(`../${file}`, import.meta.url), "utf8");
     assert.doesNotMatch(source, /\/Users\/|api\/library|api\/links|@github\/copilot-sdk/i);
     if (file.endsWith(".mjs")) assert.doesNotMatch(source, /\bfetch\s*\(|\bXMLHttpRequest\b|\bsendBeacon\b|\bWebSocket\b/);

@@ -9,6 +9,7 @@
     "serve": "node tests/serve.mjs"
   },
   "devDependencies": {
-    "@playwright/test": "1.56.1"
+    "@playwright/test": "1.56.1",
+    "jsqr": "https://codeload.github.com/cozmo/jsQR/tar.gz/8e6a036beafa7053dd44b1b76ac578d22b1b3311"
   }
 }

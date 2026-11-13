@@ -3,7 +3,7 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 
 const prefix = "/github-learn-link-generator/";
-const files = new Set(["index.html", "app.mjs", "core.mjs", "storage.mjs", "styles.css", "favicon.svg", "vendor/qrcode.mjs", "vendor/LICENSE", "dependencies.json"]);
+const files = new Set(["index.html", "app.mjs", "core.mjs", "storage.mjs", "qr.mjs", "styles.css", "favicon.svg", "vendor/qrcode.mjs", "vendor/github-mark.mjs", "vendor/LICENSE", "dependencies.json"]);
 const types = { html: "text/html", mjs: "text/javascript", css: "text/css", svg: "image/svg+xml", json: "application/json" };
 const server = createServer(async (request, response) => {
   const path = new URL(request.url, "http://localhost").pathname;

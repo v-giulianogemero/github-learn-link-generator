@@ -44,7 +44,7 @@
           <li><strong>Name the link and choose its destination.</strong> Enter a descriptive <strong>Link name</strong> so you can find it later. Paste a trusted HTTPS address into <strong>Destination URL</strong>; any HTTPS host is supported, without credentials or nondefault ports. Learn is the default. Existing UTM values before <code>#</code> are replaced; unrelated query parameters and full hash routes stay intact.</li>
           <li><strong>Choose a channel preset.</strong> Use the channel guide below to match where you will share the link. A preset fills <strong>Source</strong> (the sender or site) and <strong>Channel</strong> (the distribution method). Both stay editable. These URL labels are called UTMs; they describe a link, rather than count its clicks.</li>
           <li><strong>Describe the placement.</strong> Optionally enter <strong>Placement</strong>, such as <code>hero_button</code> or <code>booth_poster</code>, to distinguish links in the same campaign. Under <strong>Additional details</strong>, use <strong>Term</strong> for an optional keyword or segment. A <strong>Private note</strong> is not in the URL, but it is included in CSV and JSON exports.</li>
-          <li><strong>Generate, save, and share.</strong> Review the preview, then select <strong>Generate &amp; save link</strong>. The draft is not saved until you do this; each saved link gets a unique <code>learn_link_id</code>. Select <strong>Copy link</strong>, or <strong>Download QR</strong> followed by <strong>Download SVG</strong>. QR codes are generated locally. Scan-test the code before sharing or printing, and keep its white border. If clipboard access is blocked, select and copy the displayed URL.</li>
+          <li><strong>Generate, save, and share.</strong> Review the preview, then select <strong>Generate &amp; save link</strong>. The draft is not saved until you do this; each saved link gets a unique <code>learn_link_id</code>. Both the saved URL and a matching green QR code with the GitHub mark appear automatically, for every channel. Select <strong>Copy link</strong> or <strong>Download SVG</strong>. QR codes are generated locally. Scan-test before sharing or printing, keep the white border, and use a larger size for long links. If clipboard access is blocked, select and copy the displayed URL.</li>
           <li><strong>Find and reuse your links.</strong> In <strong>Link library</strong>, search or filter by initiative and channel. Use <strong>Copy link</strong> or <strong>QR code</strong> to share again. <strong>Duplicate</strong> opens a new draft; saving it creates a new ID without changing the original. <strong>Archive</strong> hides a record from the default list, but <strong>does not disable a published URL</strong>. Check <strong>Include archived</strong> and select <strong>Restore</strong> to bring it back.</li>
         </ol>
         <p class="hint">Use consistent, short labels. Campaign, Source, Channel, Placement, and Term values are lowercased; spaces become underscores (for example, <code>Learning Path</code> becomes <code>learning_path</code>). Use letters a-z, numbers, underscores, dots, or hyphens, starting with a letter or number. Never put personal information or secrets in URLs.</p>
@@ -60,7 +60,7 @@
           <div><dt>Partner</dt><dd>Partner referrals. Defaults: Source <code>partner</code>, Channel <code>referral</code>. Change Source to a useful partner label.</dd></div>
           <div><dt>Learning path</dt><dd>Links shared within a learning path. Defaults: Source <code>learning_path</code>, Channel <code>learning_path</code>. Change Source to describe the path if useful.</dd></div>
         </dl>
-        <p class="hint">Any saved link can have a QR code. Downloading a QR code does not change its Channel.</p>
+        <p class="hint">Every saved link gets a QR code, including Email, Social, Learning path, and custom channels. Channel labels describe distribution and attribution, not which outputs are available. Generating or downloading a QR code does not change the Source, Channel, other URL labels, or link ID.</p>
       </div>
       <div class="card" id="guide-example">
         <h3>Worked example: one campaign, two placements</h3>
@@ -90,7 +90,7 @@
       </div>
     </section>
     <section id="builder" class="view" aria-labelledby="builder-title">
-      <div class="section-heading"><div><h2 id="builder-title">Make your next link</h2><p>Choose an initiative, describe the placement, and you are ready to share.</p></div></div>
+      <div class="section-heading"><div><h2 id="builder-title">Make your next link</h2><p>Choose an initiative and placement. Every saved link gets a matching QR code, whichever channel you choose.</p></div></div>
       <div class="builder-grid">
         <form id="link-form" class="card" autocomplete="off">
           <fieldset id="link-fields" disabled>
@@ -119,7 +119,11 @@
             <div class="eyebrow">YOUR LINK</div><h3 id="preview-title">Ready when you are</h3>
             <p id="preview-message" role="status">Create an initiative and complete the required fields to preview your link.</p>
             <code id="preview-url" class="url-box" tabindex="0">https://learn.github.com/</code>
-            <div id="saved-actions" hidden><div class="button-row"><button id="copy-result" class="primary">Copy link</button><button id="qr-result">Download QR</button></div><p class="success-text">Saved in this browser. Download a backup to keep a separate copy.</p></div>
+            <div id="saved-actions" hidden>
+              <div id="saved-qr" hidden><div class="eyebrow">YOUR QR CODE</div><div id="saved-qr-image" class="qr-image"></div><p id="saved-qr-help" class="hint"></p></div>
+              <div class="button-row"><button id="copy-result" class="primary">Copy link</button><button id="qr-result" disabled>Download SVG</button></div>
+              <p class="success-text">Saved in this browser. Download a backup to keep a separate copy.</p>
+            </div>
             <small id="preview-help">Draft only. The preview ID is replaced with a unique ID when you save.</small>
           </div>
           <div class="card subtle"><h3>A little consistency goes a long way</h3><p><strong>Example initiative:</strong> Autumn learning series</p><p><strong>Source:</strong> community</p><p><strong>Channel:</strong> qr</p><p><strong>Placement:</strong> meetup_poster</p><hr><p>Keep the initiative consistent across email, event, and QR placements. Each saved link gets its own ID.</p></div>
@@ -174,7 +178,7 @@
   </dialog>
   <dialog id="qr-dialog" aria-labelledby="qr-title">
     <div class="dialog-heading"><h2 id="qr-title">Your QR code</h2><button data-close="qr-dialog" aria-label="Close">&#215;</button></div>
-    <p id="qr-label"></p><div id="qr-image"></div><p class="hint">Generated locally in your browser. No external QR service. Scan-test before printing, and keep the white border.</p>
+    <p id="qr-label"></p><div id="qr-image" class="qr-image"></div><p id="qr-help" class="hint"></p>
     <button id="download-qr" class="primary wide">Download SVG</button>
   </dialog>
   <dialog id="import-dialog" aria-labelledby="import-title">

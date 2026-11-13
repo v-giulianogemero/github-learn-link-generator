@@ -19,8 +19,27 @@ guide URL opens **How to use**, including after a refresh.
 1. Create an initiative with a unique campaign key.
 2. Enter any HTTPS destination (`https://learn.github.com/` remains the default),
    choose an email, QR, event, social, partner, or learning path preset, and describe the placement.
-3. Generate and save, then copy the link or download its locally generated SVG QR
-   code. Scan-test codes before distributing or printing, retaining the white border.
+3. Generate and save: the saved URL and matching green QR code with the GitHub mark
+   appear together automatically. Select **Copy link** or **Download SVG**.
+   Scan-test codes before distributing or printing, retaining the white border.
+
+Every saved link gets a QR code, across all six presets and custom channels.
+Channels describe distribution/attribution, not which outputs are available.
+Rendering or downloading a QR never switches the medium to `qr`, changes any
+labels or the unique ID, or creates another record. **QR code** in Link library
+uses the same rendering for existing saved URLs.
+
+QRs use square green modules, darker finder patterns, a white four-module quiet
+zone, and a small centered GitHub mark on white. The 2,200-character URL limit is
+unchanged: byte-mode error correction is H up to 1,273 characters, Q up to 1,663,
+and M for longer URLs. The logo backing is capped at 17, 13, or 11 modules
+respectively, so dense codes at lower correction lose very little data.
+Long URLs produce dense codes; a small screen preview may be too dense to scan.
+Enlarge the SVG rather than printing a small preview.
+Scan-test the **final size and material** with the devices you expect
+people to use. No styling or error correction guarantees universal scanning.
+If QR generation fails, the saved URL remains available; an explicit error
+directs you to retry from Link library instead of saving a duplicate.
 
 The **Learning path** preset sets `utm_medium=learning_path` and defaults the
 source to `learning_path`. As with every preset, you can edit the source before
@@ -96,7 +115,11 @@ The application does not upload your library, import files, notes, or generated
 URLs. There are no analytics scripts, tracking pixels, remote fonts, external QR
 services, cookies, credentials, or backend APIs in the tool. QR generation uses
 the vendored MIT-licensed `qrcode-generator` 2.0.4; its source, integrity, and
-license metadata are pinned in `dependencies.json`.
+license metadata are pinned in `dependencies.json`. The official GitHub mark
+comes from the MIT-licensed [Octicons mark-github-16](https://github.com/primer/octicons/blob/ea8e6bb79894cc7e85564ee9b53d86b418738d04/icons/mark-github-16.svg),
+bundled locally with its source and full license in `vendor/github-mark.mjs`.
+Every downloaded SVG also embeds that attribution and license. Use of the mark
+does not imply GitHub endorsement.
 
 GitHub Pages receives ordinary requests for the public site and its static
 assets, subject to GitHub's hosting policies. Copying a link uses your system
@@ -121,7 +144,7 @@ are not the same as camera recognition.
 ## Development and checks
 
 Production consists only of `index.html`, `styles.css`, `app.mjs`, `core.mjs`,
-`storage.mjs`, `favicon.svg`, and the QR vendor. The optional development tools
+`storage.mjs`, `qr.mjs`, `favicon.svg`, and the QR/icon vendors. The optional development tools
 require a current Node.js LTS release:
 
 ```sh
@@ -136,10 +159,15 @@ The preview is at `http://127.0.0.1:48317/github-learn-link-generator/`, deliber
 using the production subpath. The test-only Node static server is not a backend
 and is not used on Pages. Browser tests use isolated profiles and synthetic
 fixtures to cover persistence, concurrent tabs, backup restore, rollback,
-invalid input, HTTPS host support and portal hash routes, QR downloads,
+invalid input, HTTPS host support and portal hash routes, exact decoding of
+branded QR previews/downloads with the independent test-only jsQR decoder,
+all channels and short/long URLs through the full 2,200-character limit,
 clipboard errors, storage failures, text safety,
 responsive layouts, guide navigation and example accuracy, and the absence of
 campaign-data network requests.
+
+The test-only decoder is pinned to the official jsQR repository commit containing
+the prebuilt 1.4.0 distribution. It is not shipped to or loaded by the website.
 
 To run the same browser checks against a deployment without modifying anyone's
 existing browser library:
